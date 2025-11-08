@@ -24,5 +24,20 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Build without running tests
-        run: mvn clean install -DskipTests
+      # 🧩 Add Chrome browser (headless)
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      # 🧪 Run your automation tests (headless mode)
+      - name: Run Selenium Tests
+        run: mvn clean test -Dheadless=true
+
+      # ✅ Optional: Save test reports (Allure, Extent, etc.)
+      - name: Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test-Reports
+          path: target/surefire-reports/
