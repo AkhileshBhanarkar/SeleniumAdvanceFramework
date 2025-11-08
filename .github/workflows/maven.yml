@@ -34,10 +34,11 @@ jobs:
       - name: Run Selenium Tests
         run: mvn clean test -Dheadless=true
 
-      # ✅ Optional: Save test reports (Allure, Extent, etc.)
-      - name: Upload Test Reports
+      # ✅ Save test reports (Allure, Extent, etc.)
+      - name: Upload Extent Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Test-Reports
-          path: target/surefire-reports/
+          name: Extent-Report
+          path: reports/
+
