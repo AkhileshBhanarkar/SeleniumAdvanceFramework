@@ -26,7 +26,7 @@ public class DriverManager {
         switch (browser.toLowerCase()){
             case "chrome":
                 ChromeOptions chromeOptions = new ChromeOptions();
-                if(headless) chromeOptions.addArguments("--headless=new");
+                if(headless) chromeOptions.addArguments("--headless", "--no-sandbox", "--disable-dev-shm-usage");
                 driver.set(new ChromeDriver(chromeOptions));
                 break;
             case "firefox":
