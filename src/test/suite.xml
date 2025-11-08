@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+<suite name="Demo QA Run all xml files">
+    <suite-files>
+        <suite-file path="XML/parallel-methods-test.xml"/>
+        <suite-file path="XML/parallel-multi-browser-test.xml"/>
+        <suite-file path="XML/simple-test.xml"/>
+    </suite-files>
+</suite>
