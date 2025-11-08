@@ -12,6 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
 
     steps:
       - name: Checkout repository
@@ -24,22 +25,61 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # 🧩 Add Chrome browser (headless)
-      - name: Install Chrome
+      - name: Cache Maven local repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Install system packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
+          sudo apt-get install -y unzip wget xvfb ca-certificates
 
-      # 🧪 Run your automation tests (headless mode)
-      - name: Run Selenium Tests
-        run: mvn clean test -Dheadless=true
+      - name: Install Google Chrome stable
+        run: |
+          set -eux
+          CHROME_DEB="google-chrome-stable_current_amd64.deb"
+          wget -q -O "${CHROME_DEB}" "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
+          sudo apt-get install -y ./"${CHROME_DEB}"
+          rm -f "${CHROME_DEB}"
+        shell: bash
 
-      # ✅ Save test reports (Allure, Extent, etc.)
+      - name: Install matching ChromeDriver
+        run: |
+          set -eux
+          CHROME_VER="$(google-chrome --version | sed -E 's/.* ([0-9]+)\..*/\1/')"
+          echo "Chrome major version: $CHROME_VER"
+          RETRY_URL="https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VER}"
+          CHROMEDRIVER_VER="$(curl -fsSL --retry 5 --retry-delay 2 $RETRY_URL)"
+          echo "Using chromedriver version: $CHROMEDRIVER_VER"
+          CHROMEDRIVER_ZIP="chromedriver_linux64.zip"
+          wget -q -O "${CHROMEDRIVER_ZIP}" "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VER}/${CHROMEDRIVER_ZIP}"
+          unzip -q "${CHROMEDRIVER_ZIP}"
+          sudo mv -f chromedriver /usr/local/bin/chromedriver
+          sudo chmod +x /usr/local/bin/chromedriver
+          rm -f "${CHROMEDRIVER_ZIP}"
+        shell: bash
+
+      - name: Display versions
+        run: |
+          google-chrome --version || true
+          chromedriver --version || true
+          java -version
+        shell: bash
+
+      - name: Run Selenium Tests (Xvfb + Chrome)
+        env:
+          HEADLESS: true
+        run: |
+          xvfb-run -s "-screen 0 1920x1080x24" mvn -B -Dheadless=true -Dbrowser=chrome clean test
+        shell: bash
+
       - name: Upload Surefire Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Surefire-Reports
           path: target/surefire-reports/
-
-
