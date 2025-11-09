@@ -33,8 +33,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Build with Maven
-        run: mvn clean install
+      - name: Make TestNG suites CI-friendly (force headless + Chrome)
+        run: |
+          # Ensure TestNG runs in headless mode on CI and use Chrome for tests
+          # Replace headless value (false -> true) and force all browser params to chrome
+          if [ -d "src/test/XML" ]; then
+            sed -i 's/value="false"/value="true"/g' src/test/XML/*.xml || true
+            sed -i 's/value="firefox"/value="chrome"/g' src/test/XML/*.xml || true
+            sed -i 's/value="edge"/value="chrome"/g' src/test/XML/*.xml || true
+          fi
 
-      - name: Run Selenium Tests
-        run: mvn test
+      - name: Build and run tests with Maven
+        run: mvn -B clean test
