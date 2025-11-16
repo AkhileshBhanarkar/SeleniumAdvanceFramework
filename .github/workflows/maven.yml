@@ -1,13 +1,13 @@
-name: Java CI with Maven
+name: Selenium Tests
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
-  build-and-test:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,28 +20,15 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Install Chrome
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
-
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
           path: ~/.m2
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
 
-      - name: Make TestNG suites CI-friendly (force headless + Chrome)
-        run: |
-          # Ensure TestNG runs in headless mode on CI and use Chrome for tests
-          # Replace headless value (false -> true) and force all browser params to chrome
-          if [ -d "src/test/XML" ]; then
-            sed -i 's/value="false"/value="true"/g' src/test/XML/*.xml || true
-            sed -i 's/value="firefox"/value="chrome"/g' src/test/XML/*.xml || true
-            sed -i 's/value="edge"/value="chrome"/g' src/test/XML/*.xml || true
-          fi
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
 
-      - name: Build and run tests with Maven
-        run: mvn -B clean test
+      - name: Run Selenium Tests (Headless)
+        run: mvn clean test -Dselenium.browser=chrome -Dchrome.options="--headless --no-sandbox --disable-gpu"
